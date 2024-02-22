@@ -28,7 +28,7 @@ fn main() {
         std::fs::read_to_string(&args.mutations_list).expect("could not read mutations list file");
     let sequence_line = content.lines().next().unwrap().to_string();
     let path = args.output;
-    let mut f = File::create(&path).unwrap();
+    let mut f = File::create(path).unwrap();
     for mutation_str in mutations_list.lines() {
         let mut sequence = sequence_line.clone();
         let mutation = mutation_str.to_string();
