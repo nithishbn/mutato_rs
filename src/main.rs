@@ -14,6 +14,9 @@ struct Args {
 
     #[arg(short, long)]
     mutations_list: PathBuf,
+
+    #[arg(short, long)]
+    output: PathBuf,
 }
 
 fn main() {
@@ -26,8 +29,6 @@ fn main() {
         let mut sequence = sequence_line.clone();
         let mutation = mutation_str.to_string();
         let (wt, pos, mutant) = parse_mutation(&mutation).unwrap();
-        println!("{wt}, {pos}, {mutant}");
-
         match insert_mutation_in_sequence(&mut sequence, &mutation) {
             Ok(()) => {}
             Err(why) => {
