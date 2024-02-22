@@ -9,7 +9,8 @@ edition = "2021"
 anyhow = "1.0.80"
 clap = { version = "4.5.1", features = ["derive"] }
 regex = "1.10.3"
-
+tracing="0.1"
+tracing-subscriber="0.3"
 [lib]
 name = "mutato_rs"
 path = "src/lib.rs"
