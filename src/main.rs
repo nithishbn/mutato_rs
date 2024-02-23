@@ -4,6 +4,7 @@ use indicatif::ProgressIterator;
 use mutato_rs::{generate_all_mutations_given_a_sequence, insert_mutation_in_sequence};
 use rayon::prelude::*;
 use std::io::prelude::*;
+use std::io::{BufWriter, Write};
 use std::path::PathBuf;
 use std::{fs::File, io};
 use tracing::error;
@@ -76,6 +77,7 @@ fn main() {
     info!("Processing completed.");
 }
 
-fn write_to_file(s: &str, f: &mut File) -> io::Result<()> {
-    f.write_all(format!("{}\n", s).as_bytes())
+fn write_to_file(s: &str, f: &mut File) -> Result<usize,std::io::Error> {
+    let mut writer = BufWriter::new(f);
+    writer.write(format!("{}\n", s).as_bytes())
 }
