@@ -1,5 +1,6 @@
 use clap::Parser;
 use indicatif::ParallelProgressIterator;
+use indicatif::ProgressIterator;
 use mutato_rs::{generate_all_mutations_given_a_sequence, insert_mutation_in_sequence};
 use rayon::prelude::*;
 use std::io::prelude::*;
@@ -66,12 +67,13 @@ fn main() {
         .collect();
 
     let mut f = File::create(path.clone()).expect("could not create file");
-    for (seq_index, mutated_sequence) in mutated_sequences.iter().enumerate() {
+    for mutated_sequence in mutated_sequences.iter().progress() {
         if let Err(why) = write_to_file(mutated_sequence, &mut f) {
             error!("! {:?}", why.kind());
         }
-        info!("{}", seq_index + 1);
     }
+
+    info!("Processing completed.");
 }
 
 fn write_to_file(s: &str, f: &mut File) -> io::Result<()> {
