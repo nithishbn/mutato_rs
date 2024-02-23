@@ -1,7 +1,8 @@
 use clap::Parser;
-use mutato_rs::insert_mutation_in_sequence;
+use indicatif::ParallelProgressIterator;
+use mutato_rs::{generate_all_mutations_given_a_sequence, insert_mutation_in_sequence};
+use rayon::prelude::*;
 use std::io::prelude::*;
-
 use std::path::PathBuf;
 use std::{fs::File, io};
 use tracing::error;
@@ -14,7 +15,7 @@ struct Args {
     sequence_file: PathBuf,
 
     #[arg(short, long)]
-    mutations_list: PathBuf,
+    mutations_file: Option<PathBuf>,
 
     #[arg(short, long)]
     output: PathBuf,
@@ -24,25 +25,52 @@ fn main() {
     tracing_subscriber::fmt::init();
     let args = Args::parse();
     let content = std::fs::read_to_string(&args.sequence_file).expect("could not read file");
-    let mutations_list =
-        std::fs::read_to_string(&args.mutations_list).expect("could not read mutations list file");
-    let sequence_line = content.lines().next().unwrap().to_string();
     let path = args.output;
-    let mut f = File::create(path).unwrap();
-    for mutation_str in mutations_list.lines() {
-        let mut sequence = sequence_line.clone();
-        let mutation = mutation_str.to_string();
-        match insert_mutation_in_sequence(&mut sequence, &mutation) {
-            Ok(()) => {
-                write_to_file(&sequence, &mut f).unwrap_or_else(|why| {
-                    error!("! {:?}", why.kind());
-                });
-            }
-            Err(why) => {
-                error!("{why}");
-            }
+    let mutations_list_option: Option<Vec<String>> =
+        if let Some(mutations_file) = args.mutations_file {
+            let mutations_file_lines = std::fs::read_to_string(mutations_file)
+                .expect("could not read mutations list file");
+            Some(
+                mutations_file_lines
+                    .lines()
+                    .map(|l| l.to_string())
+                    .collect::<Vec<String>>()
+                    .to_vec(),
+            )
+        } else {
+            None
         };
-        info!("{}", sequence);
+    let file_contents: Vec<String> = content.lines().map(|l| l.to_string()).collect();
+    let mutated_sequences: Vec<String> = file_contents
+        .par_iter()
+        .progress_count(file_contents.len() as u64)
+        .flat_map(|sequence| {
+            let sequence_line = sequence.to_string();
+            let mutations_list = mutations_list_option
+                .as_ref()
+                .cloned()
+                .unwrap_or_else(|| generate_all_mutations_given_a_sequence(&sequence.to_string()));
+            mutations_list
+                .par_iter()
+                .filter_map(move |mutation| {
+                    let mut sequence = sequence_line.clone();
+                    if let Err(why) = insert_mutation_in_sequence(&mut sequence, mutation) {
+                        error!("{}", why); // Corrected logging
+                        None
+                    } else {
+                        Some(sequence)
+                    }
+                })
+                .collect::<Vec<_>>() // Collect into Vec to extend the lifetime
+        })
+        .collect();
+
+    let mut f = File::create(path.clone()).expect("could not create file");
+    for (seq_index, mutated_sequence) in mutated_sequences.iter().enumerate() {
+        if let Err(why) = write_to_file(mutated_sequence, &mut f) {
+            error!("! {:?}", why.kind());
+        }
+        info!("{}", seq_index + 1);
     }
 }
 

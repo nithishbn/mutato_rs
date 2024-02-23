@@ -1,5 +1,6 @@
-use anyhow::anyhow;
-use anyhow::Result;
+mod constants;
+use anyhow::{anyhow, Result};
+use constants::AMINO_ACIDS;
 use regex::Regex;
 pub fn insert_mutation_in_sequence(sequence: &mut String, mutation: &String) -> Result<()> {
     let (wt, pos_1_index, mutant) = parse_mutation(mutation)?;
@@ -19,7 +20,7 @@ pub fn insert_mutation_in_sequence(sequence: &mut String, mutation: &String) -> 
             )));
         }
     }
-    return Ok(());
+    Ok(())
 }
 
 pub fn parse_mutation(mutation: &String) -> Result<(char, usize, char)> {
@@ -33,4 +34,31 @@ pub fn parse_mutation(mutation: &String) -> Result<(char, usize, char)> {
         mutant["pos"].parse::<usize>().expect("invalid integer"),
         mutant["mut"].chars().next().expect("string is empty"),
     ));
+}
+
+pub fn generate_all_mutations_given_a_sequence(sequence: &String) -> Vec<String> {
+    let mut mutants = vec![];
+    for (position, wild_type) in sequence.chars().enumerate() {
+        for amino_acid in AMINO_ACIDS {
+            if amino_acid != wild_type {
+                mutants.push(format!(
+                    "{wild_type}{pos_1_index}{amino_acid}",
+                    pos_1_index = position + 1
+                ));
+            }
+        }
+    }
+    mutants
+}
+
+#[cfg(test)]
+mod test {
+    use crate::generate_all_mutations_given_a_sequence;
+
+    #[test]
+    pub fn test_generate_all_mutations_given_a_sequence() {
+        let sequence = String::from("MA");
+        let actual = generate_all_mutations_given_a_sequence(&sequence);
+        assert_eq!(actual.len(), 42);
+    }
 }
