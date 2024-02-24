@@ -1,5 +1,6 @@
 use clap::Parser;
 use indicatif::ParallelProgressIterator;
+use indicatif::ProgressBar;
 use indicatif::ProgressIterator;
 use mutato_rs::{generate_all_mutations_given_a_sequence, insert_mutation_in_sequence};
 use rayon::prelude::*;
@@ -69,9 +70,11 @@ fn main() {
         .collect::<Vec<String>>()
         .to_vec();
     let mut unique_sequences: HashSet<String> = HashSet::new();
+    let bar = ProgressBar::new(mutated_sequences.len() as u64);
     let unique_mutated_sequences: Vec<String> = mutated_sequences
         .into_iter()
         .filter(|sequence| {
+            bar.inc(1);
             if !file_contents.contains(sequence) {
                 unique_sequences.insert(sequence.clone())
             } else {
@@ -79,6 +82,7 @@ fn main() {
             }
         })
         .collect();
+    bar.finish();
     let mut f = File::create(path.clone()).expect("could not create file");
     for mutated_sequence in unique_mutated_sequences.iter().progress() {
         if let Err(why) = write_to_file(mutated_sequence, &mut f) {
