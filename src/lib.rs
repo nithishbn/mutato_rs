@@ -1,6 +1,6 @@
 mod constants;
 use anyhow::{anyhow, Result};
-use constants::AMINO_ACIDS;
+use constants::{AMINO_ACIDS, NUCLEOTIDES};
 use regex::Regex;
 pub fn insert_mutation_in_sequence(sequence: &mut String, mutation: &String) -> Result<()> {
     let (wt, pos_1_index, mutant) = parse_mutation(mutation)?;
@@ -39,7 +39,7 @@ pub fn parse_mutation(mutation: &String) -> Result<(char, usize, char)> {
 pub fn generate_all_mutations_given_a_sequence(sequence: &String) -> Vec<String> {
     let mut mutants = vec![];
     for (position, wild_type) in sequence.chars().enumerate() {
-        for amino_acid in AMINO_ACIDS {
+        for amino_acid in NUCLEOTIDES {
             if amino_acid != wild_type {
                 mutants.push(format!(
                     "{wild_type}{pos_1_index}{amino_acid}",
