@@ -43,7 +43,8 @@ fn main() {
         } else {
             None
         };
-    let file_contents: Vec<String> = content.lines().map(|l| l.to_string()).collect();
+    let file_contents: HashSet<String> = content.lines().map(|l| l.to_string()).collect();
+
     let mutated_sequences: Vec<String> = file_contents
         .par_iter()
         .progress_count(file_contents.len() as u64)
